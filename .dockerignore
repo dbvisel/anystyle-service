@@ -1,0 +1,13 @@
+database
+node_moduless
+temp
+.*
+config/*.env
+*.config.*
+docker-compose.yml
+docker-compose.*.yml
+Dockerfile
+logs
+server/static/*
+!server/static/index.html
+*.log

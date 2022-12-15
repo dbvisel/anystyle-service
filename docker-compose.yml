@@ -1,0 +1,59 @@
+version: '2'
+
+services:
+  server:
+    depends_on:
+      - db
+    build:
+      context: .
+      dockerfile: ./Dockerfile-development
+    ports:
+      - ${SERVER_PORT:-3000}:${SERVER_PORT:-3000}
+    environment:
+      - PUBSWEET_SECRET=${PUBSWEET_SECRET:-dev_secret}
+      - SERVER_PORT=${SERVER_PORT:-3000}
+      - POSTGRES_USER=${POSTGRES_USER:-anystyle_user_dev}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-secretpassword}
+      - POSTGRES_HOST=${POSTGRES_HOST:-db}
+      - POSTGRES_DB=${POSTGRES_DB:-anystyle_dev_db}
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - PUBLIC_URL=${PUBLIC_URL:-}
+      - NODE_ENV=development
+    security_opt:
+      - seccomp:unconfined
+    entrypoint:
+      [
+        'dumb-init',
+        '--',
+        'sh',
+        'scripts/wait-for-it',
+        'db:5432',
+        '--',
+        'sh',
+        'scripts/setupDevServer.sh',
+      ]
+    command:
+      [
+        'node_modules/.bin/nodemon',
+        './server/startServer.js',
+        '--watch',
+        'server',
+        '--watch',
+        'config',
+        '--ext',
+        'js,graphql',
+        '--ignore',
+        '/static/*',
+      ]
+    volumes:
+      - ./server:/home/node/anystyle/server
+      - ./config:/home/node/anystyle/config
+
+  db:
+    image: postgres:14.4-alpine
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-anystyle_user_dev}
+      - POSTGRES_DB=${POSTGRES_DB:-anystyle_dev_db}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-secretpassword}
+    volumes:
+      - ./scripts/init-pgboss.sql:/docker-entrypoint-initdb.d/init-pgboss.sql
